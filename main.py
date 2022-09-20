@@ -15,6 +15,6 @@ while True:
     console.print(client.get_time_remaining())
     next_move = engine.get_move(client.get_fen(), client.get_time_remaining())
     if not next_move:
-        console.print("Game over", style=)
+        console.print("Game over", style="salmon1")
     console.print(next_move, style="dark_orange3")
     input("press enter when you have moved")
