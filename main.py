@@ -16,5 +16,6 @@ while True:
     next_move = engine.get_move(client.get_fen(), client.get_time_remaining())
     if not next_move:
         console.print("Game over", style="salmon1")
+        client = Client() # this will reload the chess.com home page, instead create a start game method, and make this called in init and when game over
     console.print(next_move, style="dark_orange3")
     input("press enter when you have moved")
