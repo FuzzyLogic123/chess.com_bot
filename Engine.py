@@ -19,7 +19,8 @@ class Engine:
 
     def get_move(self, fen, time_remaining):
         self._stockfish.set_fen_position(fen)
-        assert self._stockfish.is_fen_valid(fen)
+        if not self._stockfish.is_fen_valid(fen):
+            return None
 
         self._stockfish.get_board_visual()
         

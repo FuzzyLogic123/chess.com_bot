@@ -140,7 +140,7 @@ class Client:
         piece_list = []
         for piece in pieces_DOM_elements:
             class_names = piece.get_attribute("class").split(" ")
-            if len(class_name) != 3: # if an incorrect element was found 
+            if len(class_names) != 3: # if an incorrect element was found 
                 return self.get_piece_list()
             
             for class_name in class_names:
