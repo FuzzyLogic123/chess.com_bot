@@ -7,15 +7,27 @@ from rich.traceback import install
 install(show_locals=True)
 console = Console()
 
-client = Client()
-engine = Engine()
+class Main:
+    def __init__(self):
+        self._client = Client()
+        self._engine = Engine()
+        self.make_moves()
 
-while True:
-    client.wait_for_turn()
-    console.print(client.get_time_remaining())
-    next_move = engine.get_move(client.get_fen(), client.get_time_remaining())
-    if not next_move:
-        console.print("Game over", style="salmon1")
-        client = Client() # this will reload the chess.com home page, instead create a start game method, and make this called in init and when game over
-    console.print(next_move, style="dark_orange3")
-    input("press enter when you have moved")
+    def make_moves(self):
+        while True:
+            if not self._client.wait_for_turn():
+                console.print("Game Over", style="salmon1")
+                self._client.start_new_game()
+            else:
+                next_move = self.get_next_move()
+                self._client.move(next_move)
+                console.print(next_move, style="dark_orange3")
+
+    def get_next_move(self):
+        next_move = self._engine.get_move(self._client.get_fen(), self._client.get_time_remaining())
+        if next_move == None:
+            return self.get_next_move()
+        else:
+            return next_move
+
+main = Main()

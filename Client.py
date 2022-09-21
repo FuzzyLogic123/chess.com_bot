@@ -1,44 +1,37 @@
 
 import re
 from time import sleep
-
+import time
+import chime
 from rich.pretty import pprint
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.actions.action_builder import ActionBuilder
+from selenium.webdriver import ActionChains
 
+chime.theme("big-sur")
 
 class Client:
     def __init__(self):
         driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
-        driver.get("https://www.chess.com/login_and_go?returnUrl=https://www.chess.com/play/online/friend")
-        driver.implicitly_wait(10)
+        driver.get("https://www.chess.com/login_and_go?returnUrl=https://www.chess.com/play/online/new")
+        # driver.implicitly_wait(10)
 
         self._game_started = False
         self._driver = driver
-        self._castling_rights = "KQkq"
 
         # login
         username_field = self._driver.find_element(By.CSS_SELECTOR, "#username")
         password_field = self._driver.find_element(By.CSS_SELECTOR, "#password")
 
-        username_field.send_keys("edw0006gwsc.vic.edu.au@gmail.com")
+        username_field.send_keys("50Lions")
         password_field.send_keys("Paddy2002")
-
         self._driver.find_element(By.CSS_SELECTOR, "#login").click()
 
-        # block until game is started
-        while True:
-            try:
-                self._driver.find_element(By.CSS_SELECTOR, ".clock-player-turn")
-                self._game_started = True
-                board = self._driver.find_element(By.CSS_SELECTOR, ".board")
-                self._player_colour = "b" if "flipped" in board.get_attribute("class") else "w"
-                break
-            except NoSuchElementException:
-                continue
+        self.start_new_game()
 
     def get_game_ready(self):
         return self._game_started
@@ -61,10 +54,65 @@ class Client:
         self._time_remaining = time_in_ms
         return time_in_ms
 
-    def move(self, start, end):
-        # pieces are defined as "square-{column}{row}"
-        # eg c3 - square-31
-        pass
+    def move(self, stockfish_reccomendation):
+        # chime.warning(True)
+        move_chesscom_notation = "".join([str(ord(char.lower()) - 96) if i % 2 == 0 else char for i, char in enumerate(stockfish_reccomendation)])
+        start = move_chesscom_notation[:2]
+        end = move_chesscom_notation[-2:]
+        start_end = [start, end]
+
+        # if you're black - reverse the board aka 9 - square number
+        if self._player_colour == "b":
+            for i in range(len(start_end)):
+                tmp = ""
+                for char in start_end[i]:
+                    tmp += str(9 - int(char))
+                start_end[i] = tmp
+
+        # calculate square size bounding box for square, then multiply that with the coordinate + 0.5 + bounding box of the board
+        piece_dimensions = self._driver.find_element(By.CSS_SELECTOR, ".piece").rect
+        board_dimensions = self._driver.find_element(By.CSS_SELECTOR, ".board").rect
+
+        square_width = piece_dimensions["width"]
+        x_offset = board_dimensions["x"]
+        y_offset = board_dimensions["y"] + board_dimensions["height"]
+        # chime.info(True)
+        action_builder = ActionBuilder(self._driver)
+        for e in start_end:
+            client_x = square_width * (int(e[0]) - 1 + 0.5) + x_offset
+            client_y = - square_width * (int(e[1]) - 1 + 0.5) + y_offset
+            # print(client_x, client_y)
+
+            # move to location
+            action_builder.pointer_action.move_to_location(client_x, client_y)
+            action_builder.pointer_action.click()
+            # action_builder.perform()
+
+            # move to location
+            # action_builder.pointer_action.move_to_location(client_x, client_y)
+            # action_builder.pointer_action.pointer_down()
+            # action_builder.pointer_action.move_to_location(square_width * (int(start_end[1][0]) - 1 + 0.5) + x_offset, - square_width * (int(start_end[1][1]) - 1 + 0.5) + y_offset)
+            # action_builder.pointer_action.pointer_up()
+
+        # self._driver.execute_script(f"""
+        #     let event = new MouseEvent('mousedown', {{clientX: {client_x}, clientY: {client_y}, bubbles: true}})
+        #     document.querySelector(".board").dispatchEvent(event);
+
+        #     event = new MouseEvent('mousedown', {{clientX: {square_width * (int(start_end[1][0]) - 1 + 0.5) + x_offset}, clientY: {- square_width * (int(start_end[1][1]) - 1 + 0.5) + y_offset}, bubbles: true}})
+        #     document.querySelector(".board").dispatchEvent(event);
+        # """)
+
+# let event = new MouseEvent('contextmenu', {clientX: 695.0, clientY: 691.0, bubbles: true})
+# document.querySelector("html").dispatchEvent(event)
+# event = new MouseEvent('mouseup', {clientX: 695.0, clientY: 601.0, bubbles: true})
+# document.querySelector("contextmenu").dispatchEvent(event);
+
+        t0 = time.time()
+        action_builder.perform()
+        t1 = time.time()
+        
+        print("client time")
+        print(t1-t0)
 
     def get_fen(self):
         # get .board and get all child elements
@@ -162,13 +210,49 @@ class Client:
         return piece_list
 
     def wait_for_turn(self):
-        while True:
+        loops = 0
+        while True:  # keep looping until the game is over or it is my turn
+            if loops % 5 == 0 and self.is_game_over():
+                return False
+            loops += 1
             try:
                 self._driver.find_element(By.CSS_SELECTOR, ".board-layout-bottom .clock-player-turn")
                 self.get_time_remaining()
+                print("waiting period is finished")
+                # chime.success(True)
                 return True
             except NoSuchElementException:
                 continue
 
+    def is_game_over(self):
+        # try looking for the two class names
+        try:
+            self._driver.find_element(By.CLASS_NAME, "live-game-buttons-game-over")
+            return True
+        except:
+            pass
+        try:
+            self._driver.find_element(By.CLASS_NAME, "game-result")
+            return True
+        except:
+            pass
+        try:
+            self._driver.find_element(By.CLASS_NAME, "game-over-modal-content")
+            return True
+        except:
+            return False
 
 
+    def start_new_game(self):
+        # block until game is started
+        game_over = True
+        while game_over:
+            sleep(0.1)
+            game_over = self.is_game_over()
+        self.wait_for_turn()
+        print("your turn")
+        self._game_started = True
+        board = self._driver.find_element(By.CSS_SELECTOR, ".board")
+        self._player_colour = "b" if "flipped" in board.get_attribute("class") else "w"
+        print(self._player_colour)
+        self._castling_rights = "KQkq"
