@@ -34,19 +34,16 @@ class Engine:
         return best_move
 
     def get_best_move(self, time_remaining):
-        # return self._stockfish.get_best_move_time(100), True
-        t1 = time.time()
         play_instantly = False
         best_move = self._stockfish.get_best_move_time(50)
-        play_instantly = True if self._stockfish.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE else False
-        print(time.time() - t1)
+        play_instantly = self._stockfish.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE
         return best_move, play_instantly
 
     def get_delay(self, time_remaining):
         # if its a capture and every other move loses
         BULLET_GAME_TIME = 60000
         if self._move_counter < 5:
-            time_factor = 1.5
+            time_factor = 1
         else:
             time_factor = 2.5
         realistic_delay = random.random() * time_factor * (time_remaining / BULLET_GAME_TIME)

@@ -16,7 +16,7 @@ class Main:
 
     def make_moves(self):
         while True:
-            if not self._client.wait_for_turn():
+            if not self._client.wait_for_turn(): # wait for opponent to move
                 console.print("Game Over", style="salmon1")
                 sleep(2)
                 self._client.start_new_game()
@@ -25,12 +25,13 @@ class Main:
                 if next_move:
                     self._client.move(next_move)
                     console.print(next_move, style="dark_orange3")
+                self._client.block_while_my_turn()
 
     def get_next_move(self):
         next_move = self._engine.get_move(self._client.get_fen(), self._client.get_time_remaining())
         if next_move == None:
             if not self._client.is_game_over():
-                sleep(1)
+                sleep(0.05)
                 return self.get_next_move()
         else:
             return next_move

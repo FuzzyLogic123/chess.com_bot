@@ -1,4 +1,5 @@
 
+from ast import Continue
 import re
 from time import sleep
 import time
@@ -78,15 +79,12 @@ class Client:
         square_width = piece_dimensions["width"]
         x_offset = board_dimensions["x"]
         y_offset = board_dimensions["y"] + board_dimensions["height"]
-        # chime.info(True)
+
         client_x_start = square_width * (int(start[0]) - 1 + 0.5) + x_offset
         client_y_start = - square_width * (int(start[1]) - 1 + 0.5) + y_offset
         client_x_end = square_width * (int(end[0]) - 1 + 0.5) + x_offset
         client_y_end = - square_width * (int(end[1]) - 1 + 0.5) + y_offset
 
-        # print(client_x, client_y)
-
-        t0 = time.time()
 
         self._driver.execute_script(f"""
             const pe = new PointerEvent("pointerdown", {{ bubbles: true, cancelable: true, view: window, clientX: {client_x_start}, clientY: {client_y_start} }});
@@ -100,10 +98,6 @@ class Client:
             # action_builder.pointer_action.click()
             # action_builder.perform()
 
-        t1 = time.time()
-        
-        print("client time")
-        print(t1-t0)
 
     def get_fen(self):
         # get .board and get all child elements
@@ -209,8 +203,7 @@ class Client:
             try:
                 self._driver.find_element(By.CSS_SELECTOR, ".board-layout-bottom .clock-player-turn")
                 self.get_time_remaining()
-                print("waiting period is finished")
-                chime.success(True)
+                chime.success()
                 return True
             except NoSuchElementException:
                 continue
@@ -239,16 +232,25 @@ class Client:
         try:
             self._driver.find_element(By.CSS_SELECTOR, ".live-game-buttons-game-over button").click()
         except NoSuchElementException:
-            print("new game could not be started")
+            pass
 
         game_over = True
         while game_over:
             sleep(0.1)
             game_over = self.is_game_over()
         self.wait_for_turn()
-        print("your turn")
         self._game_started = True
         board = self._driver.find_element(By.CSS_SELECTOR, ".board")
         self._player_colour = "b" if "flipped" in board.get_attribute("class") else "w"
         print(self._player_colour)
         self._castling_rights = "KQkq"
+
+    def block_while_my_turn(self):
+        while True: # wait until my turn has finished properly (see opponents clock)
+            sleep(0.05)
+            try:
+                self._driver.find_element(By.CSS_SELECTOR, ".board-layout-top .clock-player-turn")
+                return True
+            except NoSuchElementException:
+                if self.is_game_over():
+                    return False
