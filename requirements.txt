@@ -1,0 +1,5 @@
+chime==0.5.3
+rich==12.5.1
+selenium==4.4.3
+stockfish==3.28.0
+webdriver_manager==3.8.3
