@@ -27,7 +27,7 @@ class Client:
         username_field = self._driver.find_element(By.CSS_SELECTOR, "#username")
         password_field = self._driver.find_element(By.CSS_SELECTOR, "#password")
 
-        username_field.send_keys("50Lions")
+        username_field.send_keys("PhillDunphey")
         password_field.send_keys("Paddy2002")
         self._driver.find_element(By.CSS_SELECTOR, "#login").click()
 
@@ -236,6 +236,11 @@ class Client:
 
     def start_new_game(self):
         # block until game is started
+        try:
+            self._driver.find_element(By.CSS_SELECTOR, ".live-game-buttons-game-over button").click()
+        except NoSuchElementException:
+            print("new game could not be started")
+
         game_over = True
         while game_over:
             sleep(0.1)
