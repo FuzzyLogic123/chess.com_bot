@@ -25,6 +25,7 @@ class Engine:
         best_move, play_instantly = self.get_best_move(time_remaining)
         delay = self.get_delay(time_remaining)
         # print(delay)
+        play_instantly = True
         if not play_instantly:
             time.sleep(delay)
         return best_move

@@ -58,7 +58,7 @@ class Client:
         # chime.warning(True)
         move_chesscom_notation = "".join([str(ord(char.lower()) - 96) if i % 2 == 0 else char for i, char in enumerate(stockfish_reccomendation)])
         start = move_chesscom_notation[:2]
-        end = move_chesscom_notation[-2:]
+        end = move_chesscom_notation[2:4]
         start_end = [start, end]
 
         # if you're black - reverse the board aka 9 - square number
@@ -69,6 +69,8 @@ class Client:
                     tmp += str(9 - int(char))
                 start_end[i] = tmp
 
+        start = start_end[0]
+        end = start_end[1]
         # calculate square size bounding box for square, then multiply that with the coordinate + 0.5 + bounding box of the board
         piece_dimensions = self._driver.find_element(By.CSS_SELECTOR, ".piece").rect
         board_dimensions = self._driver.find_element(By.CSS_SELECTOR, ".board").rect
@@ -77,38 +79,27 @@ class Client:
         x_offset = board_dimensions["x"]
         y_offset = board_dimensions["y"] + board_dimensions["height"]
         # chime.info(True)
-        action_builder = ActionBuilder(self._driver)
-        for e in start_end:
-            client_x = square_width * (int(e[0]) - 1 + 0.5) + x_offset
-            client_y = - square_width * (int(e[1]) - 1 + 0.5) + y_offset
-            # print(client_x, client_y)
+        client_x_start = square_width * (int(start[0]) - 1 + 0.5) + x_offset
+        client_y_start = - square_width * (int(start[1]) - 1 + 0.5) + y_offset
+        client_x_end = square_width * (int(end[0]) - 1 + 0.5) + x_offset
+        client_y_end = - square_width * (int(end[1]) - 1 + 0.5) + y_offset
 
-            # move to location
-            action_builder.pointer_action.move_to_location(client_x, client_y)
-            action_builder.pointer_action.click()
-            # action_builder.perform()
+        # print(client_x, client_y)
+
+        t0 = time.time()
+
+        self._driver.execute_script(f"""
+            const pe = new PointerEvent("pointerdown", {{ bubbles: true, cancelable: true, view: window, clientX: {client_x_start}, clientY: {client_y_start} }});
+            document.querySelector(".board").dispatchEvent(pe)
+            const peu = new PointerEvent("pointerup", {{ bubbles: true, cancelable: true, view: window, clientX: {client_x_end}, clientY: {client_y_end} }});
+            document.querySelector(".board").dispatchEvent(peu)
+        """)
 
             # move to location
             # action_builder.pointer_action.move_to_location(client_x, client_y)
-            # action_builder.pointer_action.pointer_down()
-            # action_builder.pointer_action.move_to_location(square_width * (int(start_end[1][0]) - 1 + 0.5) + x_offset, - square_width * (int(start_end[1][1]) - 1 + 0.5) + y_offset)
-            # action_builder.pointer_action.pointer_up()
+            # action_builder.pointer_action.click()
+            # action_builder.perform()
 
-        # self._driver.execute_script(f"""
-        #     let event = new MouseEvent('mousedown', {{clientX: {client_x}, clientY: {client_y}, bubbles: true}})
-        #     document.querySelector(".board").dispatchEvent(event);
-
-        #     event = new MouseEvent('mousedown', {{clientX: {square_width * (int(start_end[1][0]) - 1 + 0.5) + x_offset}, clientY: {- square_width * (int(start_end[1][1]) - 1 + 0.5) + y_offset}, bubbles: true}})
-        #     document.querySelector(".board").dispatchEvent(event);
-        # """)
-
-# let event = new MouseEvent('contextmenu', {clientX: 695.0, clientY: 691.0, bubbles: true})
-# document.querySelector("html").dispatchEvent(event)
-# event = new MouseEvent('mouseup', {clientX: 695.0, clientY: 601.0, bubbles: true})
-# document.querySelector("contextmenu").dispatchEvent(event);
-
-        t0 = time.time()
-        action_builder.perform()
         t1 = time.time()
         
         print("client time")
