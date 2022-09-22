@@ -210,7 +210,7 @@ class Client:
                 self._driver.find_element(By.CSS_SELECTOR, ".board-layout-bottom .clock-player-turn")
                 self.get_time_remaining()
                 print("waiting period is finished")
-                # chime.success(True)
+                chime.success(True)
                 return True
             except NoSuchElementException:
                 continue

@@ -21,6 +21,7 @@ class Engine:
     def get_move(self, fen, time_remaining):
         self._stockfish.set_fen_position(fen)
         if not self._stockfish.is_fen_valid(fen):
+            console.print(fen, style="red")
             return None
         # self._stockfish.get_board_visual()
         best_move, play_instantly = self.get_best_move(time_remaining)
