@@ -3,12 +3,14 @@ import time
 from rich.pretty import pprint
 from stockfish import Stockfish
 from rich.console import Console
+import chime
 
 console = Console()
 
 class Engine:
     def __init__(self):
         self._move_counter = 0
+        self._prev_is_capture = False
         self._stockfish = Stockfish(
             depth=10,
             parameters={
@@ -17,34 +19,60 @@ class Engine:
             "Contempt": 100,
             "Skill Level": 1
             })
+        self._stockfish_smart = Stockfish(
+            depth=10,
+            parameters={
+            "Slow Mover": 0,
+            "Ponder": 'true',
+            "Contempt": 100,
+            "Skill Level": 3
+            })
 
     def get_move(self, fen, time_remaining):
         self._stockfish.set_fen_position(fen)
+        self._stockfish_smart.set_fen_position(fen)
         if not self._stockfish.is_fen_valid(fen):
             console.print(fen, style="red")
             return None
-        # self._stockfish.get_board_visual()
-        best_move, play_instantly = self.get_best_move(time_remaining)
+
+        best_move, is_capture = self.get_best_move()
+
+        actual_best_move, is_actual_best_move_capture = self.get_best_move(True)
+
+        if is_actual_best_move_capture:
+            if actual_best_move != best_move:
+                chime.warning()
+            best_move = actual_best_move
+            is_capture = is_actual_best_move_capture
+            
+
         delay = self.get_delay(time_remaining)
-        # print(delay)
-        # play_instantly = True
-        if not play_instantly:
+        if not (self._prev_is_capture and is_capture): # if it is a recapture play it instantly
             time.sleep(delay)
         self._move_counter += 1
+        self._prev_is_capture = is_capture
         return best_move
 
-    def get_best_move(self, time_remaining):
-        play_instantly = False
-        best_move = self._stockfish.get_best_move_time(50)
-        play_instantly = self._stockfish.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE
-        return best_move, play_instantly
+    def get_best_move(self, is_smart=False):
+        if is_smart:
+            best_move = self._stockfish_smart.get_best_move_time(50)
+            is_capture = self._stockfish_smart.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE
+        else:
+            best_move = self._stockfish.get_best_move_time(50)
+            is_capture = self._stockfish.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE
+        return best_move, is_capture
 
     def get_delay(self, time_remaining):
         # if its a capture and every other move loses
         BULLET_GAME_TIME = 60000
         if self._move_counter < 5:
-            time_factor = 1
+            time_factor = 0.7
         else:
             time_factor = 2.5
-        realistic_delay = random.random() * time_factor * (time_remaining / BULLET_GAME_TIME)
-        return realistic_delay
+
+        if time_remaining < 10000:
+            return 0
+        return random.random() * time_factor * (time_remaining / BULLET_GAME_TIME)
+
+    def set_move_count(self, new_move_count):
+        self._move_counter = new_move_count

@@ -1,8 +1,6 @@
 
-from ast import Continue
-import re
+from enum import auto
 from time import sleep
-import time
 import chime
 from rich.pretty import pprint
 from selenium import webdriver
@@ -22,6 +20,7 @@ class Client:
         # driver.implicitly_wait(10)
 
         self._game_started = False
+        self._waiting_for_new_game = True
         self._driver = driver
 
         # login
@@ -120,9 +119,9 @@ class Client:
                 # check for castling rights
                 if piece_list[i]["type"] == "k":
                     if piece_list[i]["colour"] == "w" and piece_list[i]["location"] != "51":
-                        self._castling_rights = self._castling_rights.replace("QK", "")
+                        self._castling_rights = self._castling_rights.replace("KQ", "")
                     elif piece_list[i]["colour"] == "b" and piece_list[i]["location"] != "58":
-                        self._castling_rights = self._castling_rights.replace("qk", "")
+                        self._castling_rights = self._castling_rights.replace("kq", "")
                 
                 if piece_list[i]["type"] != "r" or piece_list[i]["location"] != str(file) + str(rank):
                     if rank == 1:
@@ -200,57 +199,54 @@ class Client:
             if loops % 5 == 0 and self.is_game_over():
                 return False
             loops += 1
-            try:
-                self._driver.find_element(By.CSS_SELECTOR, ".board-layout-bottom .clock-player-turn")
-                self.get_time_remaining()
-                chime.success()
+            if self.is_element_present(".board-layout-bottom .clock-player-turn"):
+                # chime.success()
                 return True
-            except NoSuchElementException:
-                continue
 
     def is_game_over(self):
         # try looking for the two class names
-        try:
-            self._driver.find_element(By.CLASS_NAME, "live-game-buttons-game-over")
-            return True
-        except:
-            pass
-        try:
-            self._driver.find_element(By.CLASS_NAME, "game-result")
-            return True
-        except:
-            pass
-        try:
-            self._driver.find_element(By.CLASS_NAME, "game-over-modal-content")
-            return True
-        except:
-            return False
+        return self.is_element_present(".live-game-buttons-game-over") or self.is_element_present(".game-result") or self.is_element_present(".game-over-modal-content")
 
 
-    def start_new_game(self):
-        # block until game is started
-        try:
-            self._driver.find_element(By.CSS_SELECTOR, ".live-game-buttons-game-over button").click()
-        except NoSuchElementException:
-            pass
+    def start_new_game(self, auto_start_next_game=False):
+        # game_over = True
+        if auto_start_next_game:
+            new_game_selector = ".live-game-buttons-game-over button"
+            sleep(1.5)
+            while not self._waiting_for_new_game: # press the new game button
+                if self.is_element_present(new_game_selector):
+                    print("game over buttons found")
+                    self._waiting_for_new_game = True
+                    new_game_buttons = self._driver.find_elements(By.CSS_SELECTOR, new_game_selector)
+                    for game_button in new_game_buttons[::-1]: # press rematch button and find match button
+                        try:
+                            game_button.click()
+                        except:
+                            pass
+                        sleep(2)
 
-        game_over = True
-        while game_over:
+        while self.is_game_over(): # block until game is started
             sleep(0.1)
-            game_over = self.is_game_over()
         self.wait_for_turn()
         self._game_started = True
+        self._waiting_for_new_game = False
         board = self._driver.find_element(By.CSS_SELECTOR, ".board")
         self._player_colour = "b" if "flipped" in board.get_attribute("class") else "w"
-        print(self._player_colour)
         self._castling_rights = "KQkq"
 
     def block_while_my_turn(self):
         while True: # wait until my turn has finished properly (see opponents clock)
             sleep(0.05)
-            try:
-                self._driver.find_element(By.CSS_SELECTOR, ".board-layout-top .clock-player-turn")
+            if self.is_element_present(".board-layout-top .clock-player-turn"):
                 return True
-            except NoSuchElementException:
+            else:
                 if self.is_game_over():
                     return False
+
+
+    def is_element_present(self, css_selector):
+        try:
+            self._driver.find_element(By.CSS_SELECTOR, css_selector)
+            return True
+        except:
+            return False

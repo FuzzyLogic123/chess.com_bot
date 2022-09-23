@@ -1,4 +1,5 @@
 
+import sys
 from time import sleep
 from Client import Client
 from Engine import Engine
@@ -10,6 +11,7 @@ console = Console()
 
 class Main:
     def __init__(self):
+        self._auto_start_new_game = len(sys.argv) > 1 and sys.argv[1] == "-a"
         self._client = Client()
         self._engine = Engine()
         self.make_moves()
@@ -18,8 +20,9 @@ class Main:
         while True:
             if not self._client.wait_for_turn(): # wait for opponent to move
                 console.print("Game Over", style="salmon1")
-                sleep(2)
-                self._client.start_new_game()
+                # sleep(2)
+                self._engine.set_move_count(0)
+                self._client.start_new_game(self._auto_start_new_game)
             else:
                 next_move = self.get_next_move()
                 if next_move:
@@ -31,7 +34,7 @@ class Main:
         next_move = self._engine.get_move(self._client.get_fen(), self._client.get_time_remaining())
         if next_move == None:
             if not self._client.is_game_over():
-                sleep(0.05)
+                sleep(1)
                 return self.get_next_move()
         else:
             return next_move
