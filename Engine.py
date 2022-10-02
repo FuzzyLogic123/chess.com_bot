@@ -44,11 +44,12 @@ class Engine:
                 chime.warning()
             best_move = actual_best_move
             is_capture = is_actual_best_move_capture
-            
 
         delay = self.get_delay(time_remaining)
         if not (self._prev_is_capture and is_capture): # if it is a recapture play it instantly
             time.sleep(delay)
+        elif is_capture:
+            time.sleep(max(delay, 0.7)) # so people don't get salty when I take their free queen immediately
         self._move_counter += 1
         self._prev_is_capture = is_capture
         return best_move
@@ -56,10 +57,9 @@ class Engine:
     def get_best_move(self, is_smart=False):
         if is_smart:
             best_move = self._stockfish_smart.get_best_move_time(50)
-            is_capture = self._stockfish_smart.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE
         else:
             best_move = self._stockfish.get_best_move_time(50)
-            is_capture = self._stockfish.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE
+        is_capture = self._stockfish.will_move_be_a_capture(best_move) == Stockfish.Capture.DIRECT_CAPTURE
         return best_move, is_capture
 
     def get_delay(self, time_remaining):

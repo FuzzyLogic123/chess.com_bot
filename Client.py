@@ -218,9 +218,11 @@ class Client:
                     print("game over buttons found")
                     self._waiting_for_new_game = True
                     new_game_buttons = self._driver.find_elements(By.CSS_SELECTOR, new_game_selector)
-                    for game_button in new_game_buttons[::-1]: # press rematch button and find match button
+                    for i, game_button in enumerate(new_game_buttons[::-1]): # press rematch button and find match button
+                        is_rating_greater = int(self._driver.find_element(By.CSS_SELECTOR, ".player-top .user-tagline-rating").text[1:-1]) >= int(self._driver.find_element(By.CSS_SELECTOR, ".player-bottom .user-tagline-rating").text[1:-1])
                         try:
-                            game_button.click()
+                            if i != 0 or is_rating_greater:
+                                game_button.click()
                         except:
                             pass
                         sleep(2)
