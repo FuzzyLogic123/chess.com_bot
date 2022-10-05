@@ -46,10 +46,13 @@ class Engine:
             is_capture = is_actual_best_move_capture
 
         delay = self.get_delay(time_remaining)
-        if not (self._prev_is_capture and is_capture): # if it is a recapture play it instantly
+        if not is_capture: # if it is not a recapture
             time.sleep(delay)
-        elif is_capture:
+        elif self._prev_is_capture:
+            time.sleep(0)
+        else:
             time.sleep(max(delay, 0.7)) # so people don't get salty when I take their free queen immediately
+
         self._move_counter += 1
         self._prev_is_capture = is_capture
         return best_move

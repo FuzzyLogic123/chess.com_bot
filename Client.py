@@ -26,8 +26,8 @@ class Client:
         # login
         username_field = self._driver.find_element(By.CSS_SELECTOR, "#username")
         password_field = self._driver.find_element(By.CSS_SELECTOR, "#password")
-
-        username_field.send_keys("PhillDunphey")
+        sleep(2)
+        username_field.send_keys("IMHansNeiman")
         password_field.send_keys("Paddy2002")
         self._driver.find_element(By.CSS_SELECTOR, "#login").click()
 
