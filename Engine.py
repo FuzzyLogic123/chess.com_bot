@@ -44,6 +44,9 @@ class Engine:
                 chime.warning()
             best_move = actual_best_move
             is_capture = is_actual_best_move_capture
+    
+        if time_remaining < 5000: # if there is really low time start playing better
+            best_move = actual_best_move
 
         delay = self.get_delay(time_remaining)
         if not (self._prev_is_capture and is_capture): # if it is a recapture play it instantly
