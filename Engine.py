@@ -10,7 +10,6 @@ console = Console()
 class Engine:
     def __init__(self):
         self._move_counter = 0
-        self._prev_is_capture = False
         self._stockfish = Stockfish(
             depth=10,
             parameters={
@@ -51,13 +50,10 @@ class Engine:
         delay = self.get_delay(time_remaining)
         if not is_capture: # if it is not a recapture
             time.sleep(delay)
-        elif self._prev_is_capture:
-            time.sleep(0)
         else:
             time.sleep(max(delay, 0.7)) # so people don't get salty when I take their free queen immediately
 
         self._move_counter += 1
-        self._prev_is_capture = is_capture
         return best_move
 
     def get_best_move(self, is_smart=False):

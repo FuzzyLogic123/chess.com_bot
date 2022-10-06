@@ -1,5 +1,6 @@
 
 from enum import auto
+from random import random
 from time import sleep
 import chime
 from rich.pretty import pprint
@@ -10,14 +11,16 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.actions.action_builder import ActionBuilder
 from selenium.webdriver import ActionChains
+from selenium_stealth import stealth
+import undetected_chromedriver as uc
 
 chime.theme("big-sur")
 
 class Client:
     def __init__(self):
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+
+        driver = uc.Chrome()
         driver.get("https://www.chess.com/login_and_go?returnUrl=https://www.chess.com/play/online/new")
-        # driver.implicitly_wait(10)
 
         self._game_started = False
         self._waiting_for_new_game = True
@@ -27,10 +30,9 @@ class Client:
         username_field = self._driver.find_element(By.CSS_SELECTOR, "#username")
         password_field = self._driver.find_element(By.CSS_SELECTOR, "#password")
         sleep(2)
-        username_field.send_keys("IMHansNeiman")
+        username_field.send_keys("GMHansMonke")
         password_field.send_keys("Paddy2002")
         self._driver.find_element(By.CSS_SELECTOR, "#login").click()
-
         self.start_new_game()
 
     def get_game_ready(self):
@@ -91,12 +93,6 @@ class Client:
             const peu = new PointerEvent("pointerup", {{ bubbles: true, cancelable: true, view: window, clientX: {client_x_end}, clientY: {client_y_end} }});
             document.querySelector(".board").dispatchEvent(peu)
         """)
-
-            # move to location
-            # action_builder.pointer_action.move_to_location(client_x, client_y)
-            # action_builder.pointer_action.click()
-            # action_builder.perform()
-
 
     def get_fen(self):
         # get .board and get all child elements
