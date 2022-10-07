@@ -1,6 +1,7 @@
 env
 .DS_Store
 tempCodeRunnerFile.py
+credentials.py
 
 __pycache__
 # Byte-compiled / optimized / DLL files

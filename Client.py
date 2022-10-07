@@ -9,17 +9,29 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.common.actions.action_builder import ActionBuilder
 from selenium.webdriver import ActionChains
 from selenium_stealth import stealth
 import undetected_chromedriver as uc
+import credentials
+import sys
 
 chime.theme("big-sur")
 
 class Client:
     def __init__(self):
+        self._browser = len(sys.argv) > 1 and sys.argv[1] == "-firefox"
 
-        driver = uc.Chrome()
+        if (self._browser == "firefox"):
+            service = FirefoxService(executable_path=GeckoDriverManager().install())
+            options = FirefoxOptions()
+            driver = webdriver.Firefox(options=options, service=service)
+        else:
+            driver = uc.Chrome()
+
         driver.get("https://www.chess.com/login_and_go?returnUrl=https://www.chess.com/play/online/new")
 
         self._game_started = False
@@ -30,10 +42,11 @@ class Client:
         username_field = self._driver.find_element(By.CSS_SELECTOR, "#username")
         password_field = self._driver.find_element(By.CSS_SELECTOR, "#password")
         sleep(2)
-        username_field.send_keys("GMHansMonke")
-        password_field.send_keys("Paddy2002")
+        username_field.send_keys(credentials.username)
+        password_field.send_keys(credentials.password)
         self._driver.find_element(By.CSS_SELECTOR, "#login").click()
-        self.start_new_game()
+        # self.start_new_game()
+        sleep(100000)
 
     def get_game_ready(self):
         return self._game_started
